@@ -9,8 +9,6 @@ Using geological data from three potential regions, the model predicts oil reser
 
 🔗 [View the full notebook here](./OilWells.ipynb)
 
-[▶️ Launch Interactive App](https://deepnote.com/app/projects-8f6f/Optimal-Oil-Well-Development-Region-Selection-Tool-c1e8aaa2-86aa-404a-b687-fae09fa91ce9?utm_content=c1e8aaa2-86aa-404a-b687-fae09fa91ce9&__run=true)
-
 ---
 
 ## Functionality
