@@ -1,6 +1,5 @@
 ### `streamlit_app.py` (exact Streamlit file)
 
-```python
 import numpy as np
 import pandas as pd
 import streamlit as st
