@@ -49,14 +49,20 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
+    """Train a simple Linear Regression model and return model, RMSE and predictions."""
+    # Mirror the notebook: drop target and id, keep only numeric features
+    X = df.drop(columns=[TARGET_COL, "id"], errors="ignore")
+    X = X.select_dtypes(include=[np.number]).fillna(0)
 
-    X, y = prepare_features(df)
+    y = df[TARGET_COL]
 
     model = LinearRegression()
     model.fit(X, y)
 
     preds = model.predict(X)
-    rmse = mean_squared_error(y, preds, squared=False)
+    # Older sklearn version: compute RMSE manually
+    mse = mean_squared_error(y, preds)
+    rmse = float(mse ** 0.5)
 
     return model, rmse, preds
 
