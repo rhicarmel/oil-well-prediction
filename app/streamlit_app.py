@@ -85,28 +85,26 @@ def calculate_profit_from_predictions(preds: np.ndarray) -> float:
     return profit
 
 
-def bootstrap_profit(
-    preds: np.ndarray,
-    n_iterations: int = 1000,
-    sample_size: int = N_WELLS,
-    random_state: int = 42,
-):
-    """Run bootstrapping simulation on predictions to estimate profit distribution."""
-    rng = np.random.default_rng(random_state)
+def bootstrap_profit(preds: np.ndarray, n_iterations: int = 1000):
+    """Bootstrap profit using only the top N wells (not all wells)."""
+    # Select only the top N wells
+    top_preds = np.sort(preds)[-N_WELLS:]
+
+    rng = np.random.default_rng(42)
     profits = []
 
     for _ in range(n_iterations):
-        sample = rng.choice(preds, size=sample_size, replace=True)
+        sample = rng.choice(top_preds, size=N_WELLS, replace=True)
         total_product = sample.sum()
         revenue = total_product * REVENUE_PER_BBL
         profit = revenue - BUDGET
         profits.append(profit)
 
     profits = np.array(profits)
-    mean_profit = profits.mean()
-    lower_ci = np.percentile(profits, 2.5)
-    upper_ci = np.percentile(profits, 97.5)
-    loss_prob = (profits < 0).mean()
+    mean_profit = float(profits.mean())
+    lower_ci = float(np.percentile(profits, 2.5))
+    upper_ci = float(np.percentile(profits, 97.5))
+    loss_prob = float((profits < 0).mean())
 
     return profits, mean_profit, lower_ci, upper_ci, loss_prob
 
