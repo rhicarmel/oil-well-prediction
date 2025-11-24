@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 # Configuration
 # -------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parents[1]
-
 DATA_DIR = BASE_DIR / "data"
 
 REGION_FILES = {
@@ -22,27 +21,15 @@ REGION_FILES = {
 
 TARGET_COL = "product"         # Target column in all regions
 
-# Profit model parameters (match the notebook)
-N_WELLS = 200                  # Number of wells selected per region (top N)
-COST_PER_WELL = 500_000        # Cost to drill one well
-BUDGET = N_WELLS * COST_PER_WELL   # Total cost for the selected wells (100,000,000)
+# Profit model parameters (match notebook logic)
+N_WELLS = 200                       # Number of wells selected per region (top N)
+COST_PER_WELL = 500_000             # Cost to drill a single well
+BUDGET = N_WELLS * COST_PER_WELL    # Total cost for selected wells (100,000,000)
 
-REVENUE_PER_BBL = 4_500        # Revenue per thousand barrels produced
+REVENUE_PER_BBL = 4_500             # Revenue per thousand barrels produced
 
+FEATURE_COLS = ["f0", "f1", "f2"]   # Known feature columns in all geo_data files
 
-def prepare_features(df):
-    """Select correct numeric feature columns (f0, f1, f2)."""
-    feature_cols = ["f0", "f1", "f2"]
-    X = df[feature_cols].astype(float)
-    y = df[TARGET_COL].astype(float)
-    return X, y
-    
-def get_feature_columns(df):
-    """Ensure all regions use the same feature columns."""
-    # Select only columns that look like feature columns (f0..f9)
-    feature_cols = [col for col in df.columns if col.startswith("f")]
-    feature_cols = sorted(feature_cols)
-    return feature_cols
 
 # -------------------------------------------------------------------
 # Data and modeling helpers
@@ -58,16 +45,17 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
-    """Train a simple Linear Regression model and return model, RMSE and predictions."""
-    # Use the correct feature columns from the CSVs
-    feature_cols = ["f0", "f1", "f2"]
-    X = df[feature_cols].astype(float)
+    """Train a Linear Regression model and return model, RMSE and predictions."""
+    # Use the correct feature columns
+    X = df[FEATURE_COLS].astype(float)
     y = df[TARGET_COL].astype(float)
 
     model = LinearRegression()
     model.fit(X, y)
 
     preds = model.predict(X)
+
+    # Older sklearn version: compute RMSE manually
     mse = mean_squared_error(y, preds)
     rmse = float(mse ** 0.5)
 
@@ -86,8 +74,13 @@ def calculate_profit_from_predictions(preds: np.ndarray) -> float:
 
 
 def bootstrap_profit(preds: np.ndarray, n_iterations: int = 1000):
-    """Bootstrap profit using only the top N wells (not all wells)."""
-    # Select only the top N wells
+    """
+    Run bootstrapping simulation on the TOP N wells to estimate profit distribution.
+
+    This mirrors the notebook logic: resampling is done from the best wells only,
+    not from the entire prediction set.
+    """
+    # Use only the top N wells
     top_preds = np.sort(preds)[-N_WELLS:]
 
     rng = np.random.default_rng(42)
@@ -141,6 +134,7 @@ def compute_region_metrics():
 
     return results
 
+
 # -------------------------------------------------------------------
 # Streamlit app
 # -------------------------------------------------------------------
@@ -163,10 +157,10 @@ bootstrapping is used to estimate the distribution of possible profits and the r
 
     results = compute_region_metrics()
 
-    # Identify best region based on mean profit and loss probability
+    # Identify best region based on mean profit
     best_region = max(results.keys(), key=lambda r: results[r]["mean_profit"])
 
-    # Sidebar
+    # Sidebar controls
     st.sidebar.header("Controls")
     region_choice = st.sidebar.selectbox(
         "Select a region to explore",
@@ -188,7 +182,9 @@ bootstrapping is used to estimate the distribution of possible profits and the r
         f"**Suggested region for drilling:** `{best_region}`"
     )
 
-    # Overall comparison section
+    # ------------------------------------------------------------------
+    # Region comparison overview
+    # ------------------------------------------------------------------
     st.subheader("Region comparison overview")
 
     comparison_rows = []
@@ -197,9 +193,10 @@ bootstrapping is used to estimate the distribution of possible profits and the r
             {
                 "Region": region,
                 "RMSE": round(res["rmse"], 2),
-                "Mean profit": round(res["mean_profit"], 2),
-                "Lower CI": round(res["lower_ci"], 2),
-                "Upper CI": round(res["upper_ci"], 2),
+                # Convert to billions for display
+                "Mean profit (B$)": round(res["mean_profit"] / 1e9, 2),
+                "Lower CI (B$)": round(res["lower_ci"] / 1e9, 2),
+                "Upper CI (B$)": round(res["upper_ci"] / 1e9, 2),
                 "Loss probability": round(res["loss_prob"], 3),
             }
         )
@@ -214,13 +211,18 @@ bootstrapping is used to estimate the distribution of possible profits and the r
 
     st.markdown("---")
 
+    # ------------------------------------------------------------------
     # Detailed view for selected region
+    # ------------------------------------------------------------------
     st.subheader(f"Detailed view - {region_choice}")
     region_res = results[region_choice]
 
     col1, col2, col3 = st.columns(3)
     col1.metric("RMSE", f"{region_res['rmse']:.2f}")
-    col2.metric("Base profit (top 200 wells)", f"{region_res['base_profit'] / 1e9:.2f} B$")
+    col2.metric(
+        "Base profit (top 200 wells)",
+        f"{region_res['base_profit'] / 1e9:.2f} B$",
+    )
     col3.metric(
         "Loss probability",
         f"{region_res['loss_prob'] * 100:.1f} %",
