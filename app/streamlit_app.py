@@ -34,6 +34,13 @@ def prepare_features(df):
     X = df[feature_cols].select_dtypes(include=[np.number]).fillna(0)
     y = df[TARGET_COL].astype(float)
     return X, y
+    
+def get_feature_columns(df):
+    """Ensure all regions use the same feature columns."""
+    # Select only columns that look like feature columns (f0..f9)
+    feature_cols = [col for col in df.columns if col.startswith("f")]
+    feature_cols = sorted(feature_cols)
+    return feature_cols
 
 # -------------------------------------------------------------------
 # Data and modeling helpers
@@ -49,20 +56,16 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
-    """Train a simple Linear Regression model and return model, RMSE and predictions."""
-    # Mirror the notebook: drop target and id, keep only numeric features
-    X = df.drop(columns=[TARGET_COL, "id"], errors="ignore")
-    X = X.select_dtypes(include=[np.number]).fillna(0)
+    feature_cols = get_feature_columns(df)
 
-    y = df[TARGET_COL]
+    X = df[feature_cols].astype(float).fillna(0)
+    y = df[TARGET_COL].astype(float)
 
     model = LinearRegression()
     model.fit(X, y)
 
     preds = model.predict(X)
-    # Older sklearn version: compute RMSE manually
-    mse = mean_squared_error(y, preds)
-    rmse = float(mse ** 0.5)
+    rmse = float(mean_squared_error(y, preds)**0.5)
 
     return model, rmse, preds
 
