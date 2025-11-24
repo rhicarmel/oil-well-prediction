@@ -1,5 +1,3 @@
-### `streamlit_app.py` (exact Streamlit file)
-
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -26,6 +24,16 @@ TARGET_COL = "product"        # Adjust if your target column has a different nam
 N_WELLS = 200                  # Number of wells selected per region
 BUDGET = 10_000_000_000        # Total budget for drilling
 REVENUE_PER_BBL = 4_500        # Revenue per thousand barrels produced
+FEATURE_COLS = [col for col in range(10)]  # f0 through f9
+
+
+def prepare_features(df):
+    # If columns are named f0,f1,...f9
+    feature_cols = [col for col in df.columns if col.startswith("f")]
+    df = df.copy()
+    X = df[feature_cols].select_dtypes(include=[np.number]).fillna(0)
+    y = df[TARGET_COL].astype(float)
+    return X, y
 
 # -------------------------------------------------------------------
 # Data and modeling helpers
@@ -41,12 +49,8 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
-    """Train a simple Linear Regression model and return model, RMSE and predictions."""
-    # Mirror the notebook: drop target and id, keep only numeric features
-    X = df.drop(columns=[TARGET_COL, "id"], errors="ignore")
-    X = X.select_dtypes(include=[np.number]).fillna(0)
 
-    y = df[TARGET_COL]
+    X, y = prepare_features(df)
 
     model = LinearRegression()
     model.fit(X, y)
