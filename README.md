@@ -11,11 +11,10 @@ Using geological data from three regions, the project predicts oil reserves, eva
 - Lowest probability of financial loss  
 
 ### Run Notebook
-[![Run Notebook](https://img.shields.io/badge/📓_Open_Notebook-orange?style=for-the-badge)](./OilWells.ipynb)
+[![Run Notebook](https://img.shields.io/badge/📓_Open_Notebook-orange?style=for-the-badge)](./notebooks/OilWells.ipynb)
 
 ### Run the interactive app on Streamlit
 [![Streamlit App](https://img.shields.io/badge/🚀_Open_Streamlit_App-ff4b4b?style=for-the-badge)](https://oil-well-prediction-rhi-222.streamlit.app/)
-<!-- Update the URL above after you deploy the app -->
 
 ---
 
