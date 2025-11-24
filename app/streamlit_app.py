@@ -42,7 +42,10 @@ def load_region_data() -> dict:
 
 def train_linear_model(df: pd.DataFrame):
     """Train a simple Linear Regression model and return model, RMSE and predictions."""
-    X = df.drop(columns=[TARGET_COL])
+    # Mirror the notebook: drop target and id, keep only numeric features
+    X = df.drop(columns=[TARGET_COL, "id"], errors="ignore")
+    X = X.select_dtypes(include=[np.number]).fillna(0)
+
     y = df[TARGET_COL]
 
     model = LinearRegression()
