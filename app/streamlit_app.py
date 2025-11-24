@@ -20,7 +20,7 @@ REGION_FILES = {
     "Region 2": DATA_DIR / "geo_data_2.csv",
 }
 
-TARGET_COL = "product"        # Adjust if your target column has a different name
+TARGET_COL = "product"        
 N_WELLS = 200                  # Number of wells selected per region
 BUDGET = 10_000_000_000        # Total budget for drilling
 REVENUE_PER_BBL = 4_500        # Revenue per thousand barrels produced
@@ -28,10 +28,9 @@ FEATURE_COLS = [col for col in range(10)]  # f0 through f9
 
 
 def prepare_features(df):
-    # If columns are named f0,f1,...f9
-    feature_cols = [col for col in df.columns if col.startswith("f")]
-    df = df.copy()
-    X = df[feature_cols].select_dtypes(include=[np.number]).fillna(0)
+    """Select correct numeric feature columns (f0, f1, f2)."""
+    feature_cols = ["f0", "f1", "f2"]
+    X = df[feature_cols].astype(float)
     y = df[TARGET_COL].astype(float)
     return X, y
     
@@ -56,16 +55,14 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
-    feature_cols = get_feature_columns(df)
-
-    X = df[feature_cols].astype(float).fillna(0)
-    y = df[TARGET_COL].astype(float)
+    X, y = prepare_features(df)
 
     model = LinearRegression()
     model.fit(X, y)
 
     preds = model.predict(X)
-    rmse = float(mean_squared_error(y, preds)**0.5)
+    mse = mean_squared_error(y, preds)
+    rmse = float(mse ** 0.5)
 
     return model, rmse, preds
 
