@@ -20,11 +20,14 @@ REGION_FILES = {
     "Region 2": DATA_DIR / "geo_data_2.csv",
 }
 
-TARGET_COL = "product"        
-N_WELLS = 200                  # Number of wells selected per region
-BUDGET = 10_000_000_000        # Total budget for drilling
+TARGET_COL = "product"         # Target column in all regions
+
+# Profit model parameters (match the notebook)
+N_WELLS = 200                  # Number of wells selected per region (top N)
+COST_PER_WELL = 500_000        # Cost to drill one well
+BUDGET = N_WELLS * COST_PER_WELL   # Total cost for the selected wells (100,000,000)
+
 REVENUE_PER_BBL = 4_500        # Revenue per thousand barrels produced
-FEATURE_COLS = [col for col in range(10)]  # f0 through f9
 
 
 def prepare_features(df):
@@ -55,7 +58,11 @@ def load_region_data() -> dict:
 
 
 def train_linear_model(df: pd.DataFrame):
-    X, y = prepare_features(df)
+    """Train a simple Linear Regression model and return model, RMSE and predictions."""
+    # Use the correct feature columns from the CSVs
+    feature_cols = ["f0", "f1", "f2"]
+    X = df[feature_cols].astype(float)
+    y = df[TARGET_COL].astype(float)
 
     model = LinearRegression()
     model.fit(X, y)
@@ -135,7 +142,6 @@ def compute_region_metrics():
         }
 
     return results
-
 
 # -------------------------------------------------------------------
 # Streamlit app
