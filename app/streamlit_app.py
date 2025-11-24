@@ -1,6 +1,3 @@
-
----
-
 ### `streamlit_app.py` (exact Streamlit file)
 
 ```python
